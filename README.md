@@ -1,5 +1,12 @@
 # Task Tracker API
 
+REST API for team-based task management with JWT authentication, RBAC, Redis caching, Swagger documentation, and Dockerized deployment.
+
+## Repository
+
+GitHub Repository:
+https://github.com/pandaabhishek38/task-tracker-api
+
 ## Overview
 
 Task Tracker API is a team-based task management system built as part of an SDE II take-home assignment.
