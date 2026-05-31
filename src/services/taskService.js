@@ -1,7 +1,10 @@
 const prisma = require("../config/prisma");
+const redisClient = require("../config/redis");
+
+const { invalidateAssigneeCache } = require("../utils/cache");
 
 const createTask = async (data) => {
-  return prisma.task.create({
+  const task = await prisma.task.create({
     data: {
       title: data.title,
       description: data.description,
@@ -12,6 +15,10 @@ const createTask = async (data) => {
       createdById: data.createdById,
     },
   });
+
+  await invalidateAssigneeCache(task.assigneeId);
+
+  return task;
 };
 
 const getTasks = async (organizationId, filters) => {
@@ -35,6 +42,41 @@ const getTasks = async (organizationId, filters) => {
 
   if (filters.assigneeId) {
     where.assigneeId = Number(filters.assigneeId);
+  }
+
+  // Cache only per assignee
+  if (filters.assigneeId) {
+    const cacheKey = `tasks:assignee:${filters.assigneeId}`;
+
+    const cachedTasks = await redisClient.get(cacheKey);
+
+    if (cachedTasks) {
+      console.log("Cache HIT:", cacheKey);
+
+      return JSON.parse(cachedTasks);
+    }
+
+    console.log("Cache MISS:", cacheKey);
+
+    const tasks = await prisma.task.findMany({
+      where,
+      skip,
+      take: limit,
+      include: {
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    await redisClient.setEx(cacheKey, 60, JSON.stringify(tasks));
+
+    return tasks;
   }
 
   return prisma.task.findMany({
@@ -108,20 +150,34 @@ const updateTask = async (taskId, data, organizationId, currentUser) => {
     }
   }
 
-  return prisma.task.update({
+  const updatedTask = await prisma.task.update({
     where: {
       id: Number(taskId),
     },
     data,
   });
+
+  await invalidateAssigneeCache(updatedTask.assigneeId);
+
+  return updatedTask;
 };
 
 const deleteTask = async (taskId) => {
-  return prisma.task.delete({
+  const task = await prisma.task.findUnique({
     where: {
       id: Number(taskId),
     },
   });
+
+  const deletedTask = await prisma.task.delete({
+    where: {
+      id: Number(taskId),
+    },
+  });
+
+  await invalidateAssigneeCache(task.assigneeId);
+
+  return deletedTask;
 };
 
 module.exports = {
