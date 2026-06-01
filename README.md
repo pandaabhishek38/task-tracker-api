@@ -297,6 +297,47 @@ When task data changes, the corresponding assignee cache key is removed to preve
 
 ---
 
+## Analytics Endpoint
+
+Endpoint:
+
+```http
+GET /analytics/tasks
+```
+
+Returns:
+
+- Overdue task count per user
+- Average task completion time
+
+Example response:
+
+```json
+{
+  "overdueTasksPerUser": [
+    {
+      "userId": 1,
+      "name": "Abhishek",
+      "count": 1
+    }
+  ],
+  "averageCompletionTimeDays": 2.35
+}
+```
+
+### Design Decision
+
+A dedicated `completedAt` field was not included in the schema.
+
+Average completion time is approximated using the duration between:
+
+- `createdAt`
+- `updatedAt`
+
+for tasks in `DONE` status.
+
+---
+
 ## Security Design
 
 ### Authentication
@@ -434,6 +475,31 @@ node scripts/rbacTest.js
 node scripts/redisTest.js
 ```
 
+### Integration Tests
+
+Implemented using Jest and Supertest.
+
+Covered critical flows:
+
+1. Authentication Flow
+
+   - Register
+   - Login
+   - Refresh Token Flow
+
+2. Task Workflow
+   - Create Task
+   - TODO → IN_PROGRESS
+   - IN_PROGRESS → IN_REVIEW
+   - IN_REVIEW → DONE
+   - Invalid Status Transition Rejection
+
+Run:
+
+```bash
+npm test
+```
+
 ---
 
 ## Future Improvements
@@ -469,3 +535,5 @@ Given additional development time, the following enhancements would be considere
 | Docker Deployment      | Implemented    |
 | Swagger/OpenAPI        | Implemented    |
 | Database Indexes       | Implemented    |
+| Analytics Endpoint     | Implemented    |
+| Integration Tests      | Implemented    |

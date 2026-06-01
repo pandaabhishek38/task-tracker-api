@@ -10,6 +10,8 @@ const testRoutes = require("./routes/testRoutes");
 
 const taskRoutes = require("./routes/taskRoutes");
 
+const analyticsRoutes = require("./routes/analyticsRoutes");
+
 const app = express();
 
 app.use(express.json());
@@ -21,6 +23,8 @@ app.use("/auth", authRoutes);
 app.use("/test", testRoutes);
 
 app.use("/tasks", taskRoutes);
+
+app.use("/analytics", analyticsRoutes);
 
 app.get("/health", (req, res) => {
   res.json({
