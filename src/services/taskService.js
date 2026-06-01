@@ -46,7 +46,7 @@ const getTasks = async (organizationId, filters) => {
 
   // Cache only per assignee
   if (filters.assigneeId) {
-    const cacheKey = `tasks:assignee:${filters.assigneeId}`;
+    const cacheKey = `tasks:assignee:${filters.assigneeId}:page:${page}:limit:${limit}`;
 
     const cachedTasks = await redisClient.get(cacheKey);
 
@@ -130,13 +130,13 @@ const updateTask = async (taskId, data, organizationId, currentUser) => {
       );
     }
     const transitions = {
-      TODO: ["IN_PROGRESS"],
+      TODO: ["IN_PROGRESS", "BLOCKED"],
 
       IN_PROGRESS: ["IN_REVIEW", "BLOCKED"],
 
       BLOCKED: ["IN_PROGRESS"],
 
-      IN_REVIEW: ["DONE", "IN_PROGRESS"],
+      IN_REVIEW: ["DONE", "IN_PROGRESS", "BLOCKED"],
 
       DONE: [],
     };
@@ -162,12 +162,17 @@ const updateTask = async (taskId, data, organizationId, currentUser) => {
   return updatedTask;
 };
 
-const deleteTask = async (taskId) => {
-  const task = await prisma.task.findUnique({
+const deleteTask = async (taskId, organizationId) => {
+  const task = await prisma.task.findFirst({
     where: {
       id: Number(taskId),
+      organizationId,
     },
   });
+
+  if (!task) {
+    throw new Error("Task not found");
+  }
 
   const deletedTask = await prisma.task.delete({
     where: {

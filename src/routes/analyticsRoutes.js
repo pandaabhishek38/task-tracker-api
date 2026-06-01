@@ -4,6 +4,8 @@ const router = express.Router();
 
 const authenticate = require("../middleware/authenticate");
 
+const authorize = require("../middleware/authorize");
+
 const { getTaskAnalytics } = require("../controllers/analyticsController");
 
 /**
@@ -20,6 +22,11 @@ const { getTaskAnalytics } = require("../controllers/analyticsController");
  *         description: Analytics returned successfully
  */
 
-router.get("/tasks", authenticate, getTaskAnalytics);
+router.get(
+  "/tasks",
+  authenticate,
+  authorize(["ADMIN", "MANAGER"]),
+  getTaskAnalytics
+);
 
 module.exports = router;

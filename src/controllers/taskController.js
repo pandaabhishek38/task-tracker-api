@@ -71,7 +71,7 @@ const updateTask = async (req, res) => {
 
 const deleteTask = async (req, res) => {
   try {
-    await taskService.deleteTask(req.params.id);
+    await taskService.deleteTask(req.params.id, req.user.organizationId);
 
     res.json({
       message: "Task deleted successfully",

@@ -175,29 +175,21 @@ Express API
 
 Allowed transitions:
 
-```
-TODO
- |
- v
-IN_PROGRESS
- |
- +----> BLOCKED
- |
- v
-IN_REVIEW
- |
- v
-DONE
+```text
+TODO ---------> IN_PROGRESS ---------> IN_REVIEW ---------> DONE
+ |                   |                     |
+ |                   v                     v
+ +-------------> BLOCKED <-----------------+
+                      |
+                      v
+                 IN_PROGRESS
 ```
 
-Additional transitions:
+Additional rules:
 
-- `BLOCKED` -> `IN_PROGRESS`
-- `IN_REVIEW` -> `IN_PROGRESS`
-
-**Rules:**
-
-- `DONE` cannot transition further.
+- BLOCKED may be entered from TODO, IN_PROGRESS, or IN_REVIEW.
+- BLOCKED may only transition back to IN_PROGRESS.
+- DONE cannot transition further.
 - Only the assignee, MANAGER, or ADMIN may change task status.
 
 ---
@@ -209,15 +201,19 @@ Additional transitions:
 Examples:
 
 ```
+
 GET /tasks?status=TODO
 GET /tasks?priority=HIGH
 GET /tasks?assigneeId=1
+
 ```
 
 ### Pagination
 
 ```
+
 GET /tasks?page=2&limit=10
+
 ```
 
 ---
@@ -252,9 +248,11 @@ Contains:
 Indexes were added on frequently queried fields:
 
 ```
+
 @@index([status])
 @@index([assigneeId])
 @@index([dueDate])
+
 ```
 
 **Reasoning:**
@@ -272,13 +270,16 @@ Redis caching is implemented for task lists filtered by assignee.
 ### Cache Key Format
 
 ```
-tasks:assignee:{assigneeId}
+
+tasks:assignee:{assigneeId}:page:{page}:limit:{limit}
 ```
 
 Example:
 
 ```
+
 tasks:assignee:1
+
 ```
 
 ### TTL
@@ -309,6 +310,7 @@ Returns:
 
 - Overdue task count per user
 - Average task completion time
+- Access restricted to ADMIN and MANAGER roles.
 
 Example response:
 
@@ -506,9 +508,7 @@ npm test
 
 Given additional development time, the following enhancements would be considered:
 
-- Analytics endpoint for overdue tasks and completion metrics
 - WebSocket/SSE notifications for task status changes
-- Automated unit and integration tests
 - Frontend task board
 - Structured logging and monitoring
 - Rate limiting
